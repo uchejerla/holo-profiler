@@ -9,7 +9,7 @@
     "build": "npm run hud && next build",
     "start": "next start",
     "typecheck": "npm run hud && tsc --noEmit",
-    "test": "node --test tests/*.test.mjs",
+    "test": "npm run hud && node --test tests/*.test.mjs",
     "test:db": "node --test tests/db/*.test.mjs",
     "seed": "node scripts/seed.mjs",
     "gen:key": "node -e \"console.log(require('crypto').randomBytes(32).toString('base64'))\"",
