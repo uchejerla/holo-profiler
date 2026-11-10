@@ -1,0 +1,38 @@
+# Local Supabase stack for development (`supabase start`). Hosted projects are configured in the dashboard instead (see DEPLOY.md).
+project_id = "holo-profiler"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[db.seed]
+enabled = false   # demo data is loaded with `npm run seed`, which runs the real profiler
+
+[studio]
+enabled = true
+port = 54323
+
+[inbucket]
+# Local mail viewer: sign-in links land here instead of a real inbox.
+enabled = true
+port = 54324
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000/auth/callback", "http://127.0.0.1:3000/auth/callback", "http://localhost:3000/auth/confirm"]
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+enable_confirmations = false
+double_confirm_changes = true
+max_frequency = "30s"
