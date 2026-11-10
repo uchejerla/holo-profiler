@@ -1,96 +1,129 @@
-# Holo Profiler (hosted)
+<p align="center">
+  <img src="docs/assets/banner.svg" alt="Holo Profiler: a glowing file-score ring and data quality gauges" width="100%">
+</p>
 
-Holo Profiler as a standalone web app. It keeps the same holographic page you already use: drop a file, see the profile, build rules, and monitor datasets with schedules and exceptions. What changes is where things live:
+<h3 align="center">Drop a file. See its data quality in seconds.</h3>
 
-- **Sign-in:** a magic link by email. Each user gets their own workspace.
-- **Storage:** datasets, rule sets, schedules, runs, rule results, exceptions and an audit log are kept in Postgres (Supabase), with row-level security per workspace.
-- **Scheduled runs on the server:** a dataset connected to a Snowflake table or an S3 file runs at its scheduled time even when nobody has the page open. The server checks every 15 minutes.
-- **Profiling stays local:** files you drop are still profiled in your browser and are never uploaded. Only the results you choose to monitor (profiles, rule results, exceptions) are saved.
+<p align="center">
+  Holo Profiler profiles your data in the browser, suggests the rules it should pass, and keeps watching it on a schedule,<br>
+  all behind a holographic interface you can orbit, pinch and zoom.
+</p>
 
-The scoring is unchanged. The big ring is still the file score from profiling only, and the rules score is still separate.
+<p align="center">
+  <a href="https://github.com/uchejerla/holo-profiler/actions/workflows/ci.yml"><img src="https://github.com/uchejerla/holo-profiler/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <img src="https://img.shields.io/badge/files-stay_in_your_browser-3dfcb4?labelColor=031222" alt="Files stay in your browser">
+  <img src="https://img.shields.io/badge/Next.js-15-5fe1ff?labelColor=031222" alt="Next.js 15">
+  <img src="https://img.shields.io/badge/Supabase-Postgres_%2B_RLS-5fe1ff?labelColor=031222" alt="Supabase">
+  <img src="https://img.shields.io/badge/Snowflake_%26_S3-scheduled_runs-5fe1ff?labelColor=031222" alt="Snowflake and S3">
+</p>
 
-## How it is built
+<p align="center">
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#features">Features</a> ·
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#security-and-privacy">Security</a> ·
+  <a href="#roadmap">Roadmap</a> ·
+  <a href="docs/DEVELOPMENT.md">Developer guide</a>
+</p>
 
-| Part | What it is |
+---
+
+## Why Holo Profiler
+
+Most data quality work starts the same way: someone receives a file, opens it in a spreadsheet, scrolls, and guesses. Real tools exist, but they mean a platform rollout, a warehouse connection, and weeks before anyone sees a number.
+
+Holo Profiler collapses that to one gesture. Drop a CSV, Excel or Parquet file and you get:
+
+- **A score you can defend:** completeness, validity, uniqueness and consistency, rolled into one file score with the reasons behind it.
+- **Rules written for you:** suggested from what the data actually looks like, then edited, accepted or rejected by you.
+- **A way to keep watching:** schedule those rules against a Snowflake table or an S3 folder, and work the exceptions they raise.
+
+And the file never leaves your machine. Profiling runs entirely in the browser.
+
+## Features
+
+| | |
 | --- | --- |
-| `hud/src/` | The page itself: the same engine, rules, operations and UI scripts as the artifact, plus `server-bridge.js` (talks to the app's API), `ui-sources.js` (data sources panel) and `hosted.css`. |
-| `scripts/build-hud.mjs` | Builds the page into `lib/hud/hud-html.generated.ts` (served at `/app`) and a standalone copy at `dist/holo-profiler.html`. Runs automatically before `dev` and `build`. |
-| `app/` | Next.js 15 App Router: login page, magic-link callbacks, `/app` (the page, signed-in only) and the JSON API under `/api`. |
-| `lib/core/` | Server logic in plain JavaScript: the store and merge rules, schedule timing, Snowflake and S3 readers, secret encryption, and the run engine. It reuses `engine.js`, `rules.js` and `ops.js` unchanged. |
-| `supabase/migrations/` | The database: tables, row-level security, audit triggers and the scheduler's claim function. |
-| `tests/` | Unit tests, a page test in jsdom, and database tests against Postgres. |
+| **In-browser profiling** | CSV, TSV, Excel (.xlsx, .xls) and Parquet. Type inference, null tokens, patterns, outliers and per-column issues. Files are read on your device and are never uploaded. Up to 200,000 rows are profiled in full, with sampling beyond that. |
+| **One honest score** | A file score from four weighted dimensions (completeness 35%, validity 30%, uniqueness 20%, consistency 15%) blended with the share of fully clean rows, minus a penalty for each critical issue. Good is 90+, Fair is 75+. |
+| **Suggested and custom rules** | Six rule types: not null, unique (single or multi-column), range, allowed values, format (email, phone, ZIP, US state, date, UUID, URL or your own regex) and column-to-column comparisons, each with a severity. The bundled claims sample gets 37 suggestions on first drop. |
+| **Snowflake-ready SQL** | Export any rule set as Snowflake SQL, or as a scheduled Snowflake `TASK` that writes results to a table. Rule sets also import and export as JSON. |
+| **Holo space** | Every record becomes a point in a 3D field you orbit, pinch, zoom and throw panels around in. Blanks sit on their own plane, so gaps jump out. |
+| **Wide files** | Hundreds of columns fold into a ring of related groups. Zoom into a group to split it into its columns. Tested on a 250-column file. |
+| **Scheduling** | Hourly, daily or weekly runs in your own time zone. Datasets connected to Snowflake or S3 run on the server even when nobody has the page open. |
+| **Monitoring and dashboard** | Run history, score trends and schema changes per dataset, with one dashboard across everything you watch. |
+| **Exception management** | Each failing rule becomes one exception, not one per run. Assign an owner, add notes, resolve or waive it (a waiver needs a reason), and it reopens by itself if the rule fails again. Every status change lands in an audit log. |
+| **Teams by workspace** | Magic-link sign-in, a workspace per team, and owner, admin, member and viewer roles enforced in the database. |
 
-### API
+## How it works
 
-All write calls need the header `x-holo: 1` and a same-origin `Origin`, which the page sends automatically.
+```mermaid
+flowchart LR
+  F["Your file<br/>(CSV, Excel, Parquet)"] -->|read on your device| B["Browser<br/>profile · score · rules"]
+  B -->|only what you choose to monitor| A["Holo Profiler app<br/>(Next.js on Vercel)"]
+  A --> D[("Supabase Postgres<br/>row-level security per workspace")]
+  T["Timer every 15 min"] --> A
+  A -->|key-pair auth, read only| S["Snowflake tables"]
+  A -->|read-only key| S3["S3 files"]
+  A -->|results, exceptions| D
+```
 
-| Route | Purpose |
-| --- | --- |
-| `GET /api/store` | Everything in the workspace the page needs at load. |
-| `PUT / DELETE /api/store/{collection}/{id}` | Save or remove a dataset, run, exception or setting. Newer server runs and newer steward edits are never overwritten by an older copy of the page. |
-| `GET / POST /api/sources`, `DELETE /api/sources/{id}` | Snowflake and S3 connections. Credentials are encrypted and never sent back to the browser. |
-| `POST /api/sources/{id}/test` | Checks that a connection works. |
-| `GET /api/schedules` | Next run time and last status for each server-run dataset. |
-| `POST /api/datasets/{id}/run` | Run a connected dataset on the server now. |
-| `GET /api/cron/run-schedules` | Called by the scheduler every 15 minutes, with `Authorization: Bearer $CRON_SECRET`. |
-| `GET /api/health` | Whether the app is up, its settings are in place and its database tables exist (names only, never values). |
+The same profiling and rules engine runs in the browser and on the server, so a scheduled run scores your Snowflake table exactly the way the page scored your file.
 
-### Roles
+## Quick start
 
-Each workspace has members with a role: **owner** and **admin** can manage data sources, **member** can edit datasets, rules and exceptions, and **viewer** can only read. A new user gets their own workspace as owner. Inviting others into a workspace is done in the database for now (see `workspace_members`); there is no invite screen yet.
-
-### Data sources
-
-- **Snowflake:** key-pair authentication for a service user (no passwords). The private key and its passphrase are encrypted with `APP_ENCRYPTION_KEY` before they are stored, in a table that only the server can read. Tables are read with the table name passed as a bind value, and tables over 200,000 rows are sampled to 200,000 rows, as the page does for large files.
-- **S3 (or S3-compatible):** a read-only access key. Point a dataset at a file, or at a folder ending in `/` to use the newest `.csv`, `.tsv` or `.txt` file in it. Files over 250 MB are refused.
-
-## Run it locally
-
-You need Node 20 or later, Docker, and the [Supabase CLI](https://supabase.com/docs/guides/local-development/cli/getting-started).
+**Try it without setting anything up.** Build the single-file version and open it in a browser. It runs on its own and keeps history in that browser:
 
 ```bash
+git clone https://github.com/uchejerla/holo-profiler && cd holo-profiler
 npm install
-supabase start                 # starts Postgres, Auth, the API and a mail catcher in Docker
-supabase db reset              # applies supabase/migrations
-cp .env.example .env.local     # then fill in the values below
-npm run gen:secrets            # prints APP_ENCRYPTION_KEY and CRON_SECRET
+npm run hud          # writes dist/holo-profiler.html
 ```
 
-In `.env.local`, set `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` from the output of `supabase status`, `APP_ENCRYPTION_KEY` and `CRON_SECRET` from `npm run gen:secrets`.
+**Run the full app locally** with sign-in, a database and the scheduler (needs Docker and the Supabase CLI):
 
 ```bash
-SEED_EMAIL=you@example.com npm run seed   # optional: a user with the two sample files already monitored
-npm run dev                                # http://localhost:3000
+supabase start && supabase db reset
+cp .env.example .env.local    # fill in from `supabase status` and `npm run gen:secrets`
+npm run dev                   # http://localhost:3000
 ```
 
-Sign in with your email. Locally, the magic-link email goes to the mail catcher at http://127.0.0.1:54324 instead of a real inbox.
+The [developer guide](docs/DEVELOPMENT.md) has the details, and [DEPLOY-CHECKLIST.md](DEPLOY-CHECKLIST.md) takes you from zero to a hosted app on Vercel and Supabase.
 
-To trigger the scheduler by hand:
+## Built with
 
-```bash
-curl -H "Authorization: Bearer $CRON_SECRET" http://localhost:3000/api/cron/run-schedules
-```
+- **Front end:** the holographic HUD in plain JavaScript and Canvas, with no framework, served by Next.js 15 (App Router)
+- **Back end:** Next.js route handlers on Vercel
+- **Data:** Supabase (Postgres, row-level security, magic-link auth, pg_cron)
+- **Sources:** Snowflake (key-pair auth) and Amazon S3 or S3-compatible storage
+- **Tests:** Node's test runner, jsdom for the page, and a real Postgres for the security rules, run on every push
 
-The sample files are in `data/`: `sample_claims.csv` (the synthetic P&C claims file the page loads by default) and `wide_claims_250.csv` (250 columns).
+## Security and privacy
 
-## Tests
+- **Your files stay with you.** Dropped files are profiled in the browser and never sent to the server. Only the results you choose to monitor are saved.
+- **Workspaces are walled off in the database.** Row-level security means one workspace can't read another's data, even through the API.
+- **Credentials are encrypted.** Snowflake keys and S3 secrets are encrypted with AES-256-GCM before they are stored, live in a table only the server can read, and are never sent back to the browser.
+- **Least privilege by default.** Snowflake connects as a key-pair service user with read access, and S3 with a read-only key. The guides include the exact grants and policies.
 
-```bash
-npm test          # engine and scoring, exceptions, schedules, crypto, input checks, and the page in jsdom
-npm run typecheck
-npm run build
-```
+Found a security issue? Please contact the maintainer through GitHub rather than opening a public issue.
 
-The database tests need a Postgres 15 or later superuser connection. They create a throwaway database, install a small stand-in for Supabase's roles and `auth.users`, apply the migrations, check row-level security, the store, the audit log and the scheduler end to end, and drop the database at the end:
+## Roadmap
 
-```bash
-TEST_DATABASE_URL=postgres://postgres:postgres@127.0.0.1:54322/postgres npm run test:db
-```
+Ideas being considered, not promises:
 
-Without `TEST_DATABASE_URL` they are skipped.
+- Team invites and a workspace switcher in the app
+- Letting accepted rules count toward the file score, with the impact of each rule shown
+- Re-encrypting saved credentials automatically when the encryption key is rotated
+- More data sources beyond Snowflake and S3
 
-## What is not covered yet
+## Status
 
-- No invite screen or workspace switcher; a user works in their first workspace.
-- Scheduled runs need a Snowflake or S3 source. A dataset without a source still runs when you drop a matching file on the page, as before.
-- The database tests use a stand-in for Supabase Auth, so the magic-link flow itself is only checked against a real Supabase project (see DEPLOY.md).
+Early release. The full test suite passes on every push, and the first hosted deployment is under way.
+
+## Contributing
+
+Ideas and bug reports are welcome as GitHub issues. For code changes, open an issue first so we can agree on the approach, then send a pull request with tests. `npm test` and `npm run build` must pass.
+
+## License
+
+No license has been chosen yet. Until one is added, all rights are reserved by the author.

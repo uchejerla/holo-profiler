@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="420" viewBox="0 0 1280 420" role="img" aria-labelledby="t d">
+  <title id="t">Holo Profiler</title>
+  <desc id="d">Holo Profiler banner: a glowing file-score ring reading 81 for the bundled synthetic claims sample, with completeness, validity, uniqueness and consistency gauges.</desc>
+  <defs>
+    <radialGradient id="bg" cx="34%" cy="50%" r="75%">
+      <stop offset="0" stop-color="#062440"/>
+      <stop offset=".55" stop-color="#031222"/>
+      <stop offset="1" stop-color="#01060d"/>
+    </radialGradient>
+    <radialGradient id="orb" cx="50%" cy="45%" r="55%">
+      <stop offset="0" stop-color="#d6f4ff" stop-opacity=".95"/>
+      <stop offset=".25" stop-color="#5fe1ff" stop-opacity=".55"/>
+      <stop offset=".7" stop-color="#2f86ff" stop-opacity=".12"/>
+      <stop offset="1" stop-color="#2f86ff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="arc" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5fe1ff"/>
+      <stop offset="1" stop-color="#2f86ff"/>
+    </linearGradient>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M32 0H0V32" fill="none" stroke="#58cdff" stroke-opacity=".08" stroke-width="1"/>
+    </pattern>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <style>
+      .d{font-family:"Chakra Petch","Rajdhani","Segoe UI",system-ui,sans-serif}
+      .m{font-family:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace}
+      .spin{transform-origin:330px 210px;animation:spin 40s linear infinite}
+      .spin2{transform-origin:330px 210px;animation:spin 70s linear infinite reverse}
+      .pulse{animation:pulse 4s ease-in-out infinite}
+      @keyframes spin{to{transform:rotate(360deg)}}
+      @keyframes pulse{50%{opacity:.55}}
+      @media (prefers-reduced-motion:reduce){.spin,.spin2,.pulse{animation:none}}
+    </style>
+  </defs>
+
+  <rect width="1280" height="420" fill="url(#bg)"/>
+  <rect width="1280" height="420" fill="url(#grid)"/>
+  <!-- horizon lines -->
+  <g stroke="#58cdff" stroke-opacity=".18" fill="none">
+    <path d="M0 330 Q640 300 1280 330"/>
+    <path d="M0 360 Q640 330 1280 360" stroke-opacity=".1"/>
+  </g>
+
+  <!-- data points drifting around the orb -->
+  <g fill="#5fe1ff" class="pulse">
+    <circle cx="188" cy="112" r="2" opacity=".7"/><circle cx="214" cy="300" r="1.6" opacity=".5"/>
+    <circle cx="470" cy="96" r="1.8" opacity=".6"/><circle cx="492" cy="318" r="2.2" opacity=".55"/>
+    <circle cx="156" cy="226" r="1.4" opacity=".45"/><circle cx="508" cy="214" r="1.5" opacity=".5"/>
+    <circle cx="262" cy="70" r="1.3" opacity=".4"/><circle cx="402" cy="352" r="1.4" opacity=".4"/>
+  </g>
+  <circle cx="452" cy="132" r="2.4" fill="#ff5a7a" opacity=".8"/>
+  <circle cx="226" cy="282" r="2.2" fill="#ffbe55" opacity=".8"/>
+
+  <!-- orb and rings -->
+  <circle cx="330" cy="210" r="150" fill="url(#orb)"/>
+  <g class="spin2" fill="none" stroke="#58cdff">
+    <circle cx="330" cy="210" r="168" stroke-opacity=".22" stroke-dasharray="2 10"/>
+  </g>
+  <g class="spin" fill="none" stroke="#5fe1ff" stroke-opacity=".5">
+    <circle cx="330" cy="210" r="140" stroke-dasharray="60 18 8 18" stroke-width="1.2"/>
+  </g>
+  <circle cx="330" cy="210" r="118" fill="none" stroke="#58cdff" stroke-opacity=".18" stroke-width="10"/>
+  <!-- 81% arc: circumference 2*pi*118 = 741.4; 0.807 of it = 598.3 -->
+  <circle cx="330" cy="210" r="118" fill="none" stroke="url(#arc)" stroke-width="10" stroke-linecap="round"
+          stroke-dasharray="598.3 741.4" transform="rotate(-90 330 210)" filter="url(#glow)"/>
+  <text x="330" y="200" text-anchor="middle" class="d" font-size="76" font-weight="600" fill="#d6f4ff" filter="url(#glow)">81</text>
+  <text x="330" y="232" text-anchor="middle" class="d" font-size="13" letter-spacing="3" fill="#86afc8">FILE SCORE · FAIR</text>
+  <text x="330" y="254" text-anchor="middle" class="m" font-size="11" fill="#4f7690">2,007 rows · 13 columns</text>
+
+  <!-- wordmark -->
+  <text x="620" y="150" class="d" font-size="64" font-weight="600" letter-spacing="2" fill="#d6f4ff">HOLO PROFILER</text>
+  <text x="622" y="190" class="d" font-size="22" fill="#5fe1ff">Drop a file. See its data quality in seconds.</text>
+  <text x="622" y="218" class="d" font-size="15" fill="#86afc8">Profiled in your browser · rules · schedules · exceptions</text>
+
+  <!-- dimension gauges (real values for the bundled synthetic claims sample) -->
+  <g class="m" font-size="11">
+    <g transform="translate(622 252)">
+      <text fill="#86afc8" letter-spacing="1.5">COMPLETENESS</text>
+      <rect y="10" width="260" height="6" rx="3" fill="#58cdff" fill-opacity=".15"/>
+      <rect y="10" width="257" height="6" rx="3" fill="#3dfcb4"/>
+      <text x="300" y="16" fill="#d6f4ff" text-anchor="end">98.9</text>
+    </g>
+    <g transform="translate(622 286)">
+      <text fill="#86afc8" letter-spacing="1.5">VALIDITY</text>
+      <rect y="10" width="260" height="6" rx="3" fill="#58cdff" fill-opacity=".15"/>
+      <rect y="10" width="258.8" height="6" rx="3" fill="#3dfcb4"/>
+      <text x="300" y="16" fill="#d6f4ff" text-anchor="end">99.5</text>
+    </g>
+    <g transform="translate(952 252)">
+      <text fill="#86afc8" letter-spacing="1.5">UNIQUENESS</text>
+      <rect y="10" width="260" height="6" rx="3" fill="#58cdff" fill-opacity=".15"/>
+      <rect y="10" width="256" height="6" rx="3" fill="#5fe1ff"/>
+      <text x="300" y="16" fill="#d6f4ff" text-anchor="end">98.5</text>
+    </g>
+    <g transform="translate(952 286)">
+      <text fill="#86afc8" letter-spacing="1.5">CONSISTENCY</text>
+      <rect y="10" width="260" height="6" rx="3" fill="#58cdff" fill-opacity=".15"/>
+      <rect y="10" width="252.9" height="6" rx="3" fill="#5fe1ff"/>
+      <text x="300" y="16" fill="#d6f4ff" text-anchor="end">97.3</text>
+    </g>
+  </g>
+  <text x="622" y="346" class="m" font-size="10" fill="#4f7690" letter-spacing="1">SAMPLE · SYNTHETIC P&amp;C CLAIMS FILE BUNDLED WITH THE APP · 37 SUGGESTED RULES</text>
+
+  <!-- corner brackets -->
+  <g stroke="#82e1ff" stroke-opacity=".6" fill="none" stroke-width="1.5">
+    <path d="M20 44V20H44"/><path d="M1236 20H1260V44"/><path d="M20 376V400H44"/><path d="M1236 400H1260V376"/>
+  </g>
+</svg>
