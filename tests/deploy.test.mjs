@@ -26,6 +26,9 @@ test('settings check passes good values and names each problem without showing v
   assert.ok(!JSON.stringify(bad).includes('anon-key-value'), 'never echoes a value');
   assert.equal(checkEnv({ ...good, NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:54321', NEXT_PUBLIC_SITE_URL: undefined }).ok, true, 'local values are fine outside production');
   assert.equal(checkEnv({ ...good, APP_ENCRYPTION_KEY: Buffer.alloc(16).toString('base64') }).ok, false);
+  // New-style Supabase keys: the publishable one goes to browsers, the secret one stays on the server.
+  assert.equal(checkEnv({ ...good, NEXT_PUBLIC_SUPABASE_ANON_KEY: 'sb_publishable_abc', SUPABASE_SERVICE_ROLE_KEY: 'sb_secret_def' }).ok, true);
+  assert.deepEqual(checkEnv({ ...good, NEXT_PUBLIC_SUPABASE_ANON_KEY: 'sb_secret_def', SUPABASE_SERVICE_ROLE_KEY: 'sb_publishable_abc' }).problems.map(p => p.name).sort(), ['NEXT_PUBLIC_SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY']);
 });
 
 test('gen:secrets prints values that pass the check', () => {
@@ -46,12 +49,26 @@ test('check:env reads an env file and exits non-zero on problems', () => {
   assert.ok(!out.includes(good.APP_ENCRYPTION_KEY));
 });
 
-test('plan switch: Hobby removes the 15-minute Vercel Cron, Pro restores it', () => {
+test('plan switch: Hobby keeps only a once-a-day Vercel Cron, Pro runs it every 15 minutes', () => {
   const orig = readFileSync('vercel.json', 'utf8');
   try {
-    execFileSync(process.execPath, ['scripts/set-plan.mjs', 'hobby']);
-    assert.equal(JSON.parse(readFileSync('vercel.json', 'utf8')).crons, undefined);
     execFileSync(process.execPath, ['scripts/set-plan.mjs', 'pro']);
     assert.deepEqual(JSON.parse(readFileSync('vercel.json', 'utf8')).crons, [{ path: '/api/cron/run-schedules', schedule: '*/15 * * * *' }]);
+    execFileSync(process.execPath, ['scripts/set-plan.mjs', 'hobby']);
+    const [c] = JSON.parse(readFileSync('vercel.json', 'utf8')).crons;
+    assert.equal(c.path, '/api/cron/run-schedules');
+    // Hobby rejects anything more often than daily: fixed minute and hour, every day.
+    const [min, hour, dom, mon, dow] = c.schedule.split(' ');
+    assert.ok(/^\d+$/.test(min) && /^\d+$/.test(hour) && dom === '*' && mon === '*' && dow === '*', c.schedule);
   } finally { writeFileSync('vercel.json', orig); }
+});
+
+test('the repo is set up for the Hobby plan, and the Supabase timer calls the scheduler every 15 minutes', () => {
+  const [c] = JSON.parse(readFileSync('vercel.json', 'utf8')).crons;
+  assert.match(c.schedule, /^\d+ \d+ \* \* \*$/);
+  const sql = readFileSync('supabase/optional/pg_cron_tick.sql', 'utf8');
+  assert.match(sql, /cron\.schedule\(\s*'holo-profiler-tick',\s*'\*\/15 \* \* \* \*'/);
+  assert.match(sql, /\/api\/cron\/run-schedules/);
+  assert.match(sql, /vault\.decrypted_secrets where name = 'holo_cron_secret'/);
+  assert.ok(!/Bearer [A-Za-z0-9_-]{20,}/.test(sql), 'no real secret in the file');
 });

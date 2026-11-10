@@ -1,6 +1,6 @@
 # Deploying Holo Profiler
 
-This puts the app on Vercel with a Supabase project behind it. Nothing here has been done yet: each step needs your own accounts.
+This puts the app on Vercel with a Supabase project behind it. The repository is set up for the **Vercel Hobby plan** (see section 3). Nothing here has been done yet: each step needs your own accounts.
 
 ## 1. Supabase project
 
@@ -20,7 +20,7 @@ This puts the app on Vercel with a Supabase project behind it. Nothing here has 
    ```
 5. **Authentication > Providers > Email**: keep Email enabled. If only your company should sign in, turn off "Allow new users to sign up" after you have signed in once, and add people with **Invite user**.
 6. **Authentication > SMTP**: Supabase's built-in mail is limited to a few emails an hour. For real use, set up your own SMTP sender (for example SES, SendGrid or Postmark).
-7. **Project Settings > API**: copy the Project URL, the `anon` key and the `service_role` key for step 2.
+7. **Project Settings > API Keys**: copy the Project URL, the **publishable** key and the **secret** key for step 2. Projects that still show the older keys use `anon` in place of publishable and `service_role` in place of secret; either kind works.
 
 ## 2. Vercel project
 
@@ -30,8 +30,8 @@ This puts the app on Vercel with a Supabase project behind it. Nothing here has 
    | Name | Value |
    | --- | --- |
    | `NEXT_PUBLIC_SUPABASE_URL` | Supabase Project URL |
-   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase `anon` key |
-   | `SUPABASE_SERVICE_ROLE_KEY` | Supabase `service_role` key (server only) |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase publishable key (or legacy `anon`) |
+   | `SUPABASE_SERVICE_ROLE_KEY` | Supabase secret key (or legacy `service_role`), server only |
    | `APP_ENCRYPTION_KEY` | from `npm run gen:secrets` |
    | `CRON_SECRET` | from `npm run gen:secrets` |
    | `NEXT_PUBLIC_SITE_URL` | your app's address |
@@ -42,14 +42,18 @@ This puts the app on Vercel with a Supabase project behind it. Nothing here has 
 
 ## 3. The scheduler
 
-The app needs something to call `/api/cron/run-schedules` every 15 minutes. Pick one:
+The app needs something to call `/api/cron/run-schedules` every 15 minutes. Each call runs only the datasets that are due, and each dataset is locked while it runs, so extra or overlapping calls are harmless.
 
-- **Vercel Cron (Pro plan).** `vercel.json` already asks for every 15 minutes (`npm run plan:pro`), and Vercel sends `CRON_SECRET` with each call.
-- **Supabase pg_cron (Hobby plan).** Vercel's Hobby plan only allows a cron that runs once a day, and a more frequent one makes the deploy fail. Run `npm run plan:hobby` and commit before deploying, which removes the cron from `vercel.json`. After the first deploy, enable the `pg_cron` and `pg_net` extensions in Supabase and run `supabase/optional/pg_cron_tick.sql` in the SQL editor with your app's address and `CRON_SECRET` filled in.
+**Hobby plan (how the repository is set up now).** Vercel's Hobby plan allows a cron that runs at most once a day; a more frequent one makes the deploy fail. So:
 
-Each server run may take up to 5 minutes (`maxDuration = 300`), which both plans allow with Fluid compute, the default for new Vercel projects. Note that Vercel's fair use guidelines limit the Hobby plan to personal, non-commercial use, so a paid or company deployment needs Pro.
+- `vercel.json` has a once-a-day backup call at 11:00 UTC. Vercel may run it any time within that hour.
+- The 15-minute calls come from Supabase. After the first deploy, enable the `pg_cron` and `pg_net` extensions (Database > Extensions), then run `supabase/optional/pg_cron_tick.sql` in the SQL editor with your app's address and `CRON_SECRET` filled in. It keeps both in Supabase Vault rather than in the job itself. The file also has the queries to check it is working and to change or stop it.
 
-Each tick claims due datasets with a lock, so two overlapping ticks never run the same dataset twice.
+**Moving to Pro later.** Run `npm run plan:pro`, commit and push, then stop the Supabase timer with `select cron.unschedule('holo-profiler-tick');`.
+
+Vercel's fair use guidelines limit Hobby to personal, non-commercial use. Move to Pro before you charge anyone for Holo Profiler, use it for your employer's or a client's work, or let other people's work depend on it.
+
+Each server run may take up to 5 minutes (`maxDuration = 300`), which is the Hobby maximum with Fluid compute, the default for new Vercel projects. A run cut off at that limit is tried again on a later call; the app reads at most 200,000 rows per table to stay well inside it. Pro allows longer runs if you ever need them.
 
 ## 4. Snowflake key-pair user
 
