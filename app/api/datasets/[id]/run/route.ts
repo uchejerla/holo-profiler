@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 import { getCtx, requireWriter } from '@/lib/context';
 import { checkSameOrigin, handle, HttpError, json } from '@/lib/http';
 import { serverDeps } from '@/lib/server-deps';
+import { requirePro } from '@/lib/billing';
 import runnerMod from '@/lib/core/runner.js';
 
 export const dynamic = 'force-dynamic';
@@ -15,6 +16,7 @@ export const POST = handle(async (req: NextRequest, { params }: P) => {
   const { id } = await params;
   const ctx = await getCtx();
   requireWriter(ctx);
+  requirePro(ctx);
   const { data: mine } = await ctx.sb.from('datasets').select('id').eq('workspace_id', ctx.ws.id).eq('id', id).maybeSingle();
   if (!mine) throw new HttpError(404, 'No such dataset');
   const deps = serverDeps();

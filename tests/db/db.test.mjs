@@ -236,6 +236,17 @@ test('members cannot call the scheduler claim function', { skip }, async () => {
   assert.ok(r.error && /permission denied/.test(r.error.message));
 });
 
+test('billing: an owner cannot change their own plan, and the paid-only scheduler skips free workspaces', { skip }, async () => {
+  const self = await sbA.from('workspaces').update({ plan: 'pro' }).eq('id', wsA).select('id');
+  assert.ok(self.error && /permission denied/.test(self.error.message), 'plan is not writable by members');
+  assert.equal((await sbA.from('workspaces').update({ name: 'Renamed' }).eq('id', wsA).select('id')).error, null, 'the name still is');
+  await pool.query(`update public.schedules set next_run_at = now() - interval '1 minute', lock_until = null where workspace_id = $1`, [wsA]);
+  const claim = async () => (await admin.rpc('claim_due_schedules', { p_now: new Date().toISOString(), p_limit: 5, p_lock_until: new Date().toISOString(), p_paid_only: true })).data.filter(c => c.workspace_id === wsA);
+  assert.equal((await claim()).length, 0, 'free: not claimed');
+  await pool.query(`update public.workspaces set plan = 'pro' where id = $1`, [wsA]);
+  assert.equal((await claim()).length, 1, 'pro: claimed');
+});
+
 test('deleting a dataset removes its runs, rule results, schedule and exceptions', { skip }, async () => {
   const store = createStore(sbA);
   const d = (await store.loadAll(wsA)).datasets[0];

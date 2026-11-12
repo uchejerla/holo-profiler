@@ -38,7 +38,8 @@ window.HoloServer = {
     test: id => api('POST', '/api/sources/' + seg(id) + '/test')
   },
   schedules: () => api('GET', '/api/schedules'),
-  runNow: dsId => api('POST', '/api/datasets/' + seg(dsId) + '/run')
+  runNow: dsId => api('POST', '/api/datasets/' + seg(dsId) + '/run'),
+  billing: () => api('POST', '/api/billing')
 };
 
 function showSignedOut() {
@@ -60,6 +61,19 @@ function mountAccount() {
   w.innerHTML = '<span class="acct-who" title=""></span><form method="post" action="/auth/signout"><button class="mini" type="submit">Sign out</button></form>';
   w.querySelector('.acct-who').textContent = ws ? who + ' · ' + ws : who;
   w.querySelector('.acct-who').title = ws ? 'Workspace: ' + ws : '';
+  // Upgrade (free) or Billing (pro), for the people who can pay: owners and admins.
+  const role = cfg.workspace && cfg.workspace.role;
+  if (cfg.billing && (role === 'owner' || role === 'admin')) {
+    const b = document.createElement('button');
+    b.className = 'mini'; b.type = 'button';
+    b.textContent = cfg.workspace.plan === 'pro' ? 'Billing' : 'Upgrade to Pro';
+    b.onclick = async () => {
+      b.disabled = true;
+      try { window.location.assign((await window.HoloServer.billing()).url); }
+      catch (e) { b.disabled = false; alert(e.message); }
+    };
+    w.insertBefore(b, w.querySelector('form'));
+  }
   bar.appendChild(w);
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mountAccount); else mountAccount();

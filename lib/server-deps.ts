@@ -2,6 +2,7 @@
 import 'server-only';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { env } from '@/lib/env';
+import { billingOn } from '@/lib/billing';
 import storeMod from '@/lib/core/store.js';
 import cryptoMod from '@/lib/core/crypto.js';
 import sourcesMod from '@/lib/core/sources.js';
@@ -29,7 +30,7 @@ export function serverDeps() {
     fetchRows,
     storeFor: (_ws: string) => createStore(admin),
     claimDue: async (nowIso: string, limit: number, lockIso: string) => {
-      const { data, error } = await admin.rpc('claim_due_schedules', { p_now: nowIso, p_limit: limit, p_lock_until: lockIso });
+      const { data, error } = await admin.rpc('claim_due_schedules', { p_now: nowIso, p_limit: limit, p_lock_until: lockIso, p_paid_only: billingOn() });
       if (error) throw new Error(error.message);
       return data || [];
     },

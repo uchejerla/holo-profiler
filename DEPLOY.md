@@ -108,7 +108,19 @@ For an S3-compatible store (MinIO, R2 and others), fill in its HTTPS endpoint.
 
 There is no automatic re-encryption yet. To change `APP_ENCRYPTION_KEY`, set the new value in Vercel, redeploy, then open each data source in the app, enter its credentials again and test it. Sources that are not re-entered will fail their next run with a clear error.
 
-## 7. Before real data goes in
+## 7. Billing (optional)
+
+Without these settings every workspace has every feature. With them, dropping files stays free and **connected sources, "Run on server now" and scheduled runs need the Pro plan**.
+
+1. `supabase db push` to apply the billing migration (adds the plan to each workspace). Do this before setting the keys below.
+2. Stripe > Product catalog: add a product (for example "Holo Profiler Pro") with a **recurring** price. Copy the price ID (`price_...`).
+3. Stripe > Developers > Webhooks: add an endpoint at `https://<your-domain>/api/billing/webhook` for the events `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated` and `customer.subscription.deleted`. Copy its signing secret (`whsec_...`).
+4. Stripe > Settings > Billing > Customer portal: turn it on, so customers can change card or cancel from the app's **Billing** button.
+5. Vercel > Environment Variables: set `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID` and `STRIPE_WEBHOOK_SECRET`, then redeploy. Use Stripe's test mode keys first and pay with card `4242 4242 4242 4242`.
+
+Existing workspaces start on the free plan. To give one Pro without payment, run in the Supabase SQL editor: `update public.workspaces set plan = 'pro' where id = '<workspace id>';`
+
+## 8. Before real data goes in
 
 - Decide who may sign in (step 1.5) and set up your own SMTP (step 1.6).
 - Keep the `service_role` key and `APP_ENCRYPTION_KEY` only in Vercel's environment variables, never in the repository.

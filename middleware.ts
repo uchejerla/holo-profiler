@@ -25,6 +25,6 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  // Not for static files or the cron route (which authenticates with CRON_SECRET, not a session).
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/cron|api/health).*)'],
+  // Not for static files, the cron route (CRON_SECRET) or the Stripe webhook (Stripe signature): none of them use a session.
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/cron|api/health|api/billing/webhook).*)'],
 };

@@ -15,7 +15,7 @@ export async function GET(req: Request) {
     if (e?.status === 401) return NextResponse.redirect(new URL('/login?next=/app', req.url));
     return new NextResponse('Could not open your workspace: ' + String(e?.message || e), { status: e?.status || 500, headers: { 'content-type': 'text/plain; charset=utf-8' } });
   }
-  const config = { user: { email: ctx.user.email }, workspace: { id: ctx.ws.id, name: ctx.ws.name, role: ctx.ws.role } };
+  const config = { user: { email: ctx.user.email }, workspace: { id: ctx.ws.id, name: ctx.ws.name, role: ctx.ws.role, plan: ctx.ws.plan }, billing: !!(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_PRICE_ID) };
   return new NextResponse(HUD_BEFORE + scriptJson(config) + HUD_AFTER, {
     headers: {
       'content-type': 'text/html; charset=utf-8',

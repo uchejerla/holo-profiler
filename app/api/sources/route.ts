@@ -5,6 +5,7 @@ import { getCtx, requireAdmin } from '@/lib/context';
 import { checkSameOrigin, handle, HttpError, json, readJson } from '@/lib/http';
 import { supabaseAdmin } from '@/lib/supabase/admin';
 import { env } from '@/lib/env';
+import { requirePro } from '@/lib/billing';
 import sourcesMod from '@/lib/core/sources.js';
 import cryptoMod from '@/lib/core/crypto.js';
 
@@ -24,6 +25,7 @@ export const POST = handle(async (req: NextRequest) => {
   checkSameOrigin(req);
   const ctx = await getCtx();
   requireAdmin(ctx);
+  requirePro(ctx);
   const b = await readJson(req, 64 * 1024);
   const kind = b?.kind, name = String(b?.name || '').trim().slice(0, 80);
   if (!name) throw new HttpError(400, 'Give the source a name');
