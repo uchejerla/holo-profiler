@@ -38,6 +38,8 @@ Hobby is free but limited to personal, non-commercial use. Move to Pro before yo
 - [ ] Supabase > Authentication > URL Configuration: Site URL = that address; Redirect URLs: add `<address>/auth/callback` and `<address>/auth/confirm`.
 - [ ] Supabase > Authentication > Email Templates > Magic Link: set the link to
   `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/app`
+- [ ] Supabase > Authentication > Email Templates > Invite user: set the link to
+  `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite&next=/app`
 
 ## 4. Check it
 

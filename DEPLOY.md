@@ -14,10 +14,15 @@ This puts the app on Vercel with a Supabase project behind it. The repository is
 3. **Authentication > URL Configuration**
    - Site URL: your app's address, for example `https://holo-profiler.vercel.app`.
    - Redirect URLs: add `https://<your-domain>/auth/callback` and `https://<your-domain>/auth/confirm`.
-4. **Authentication > Email Templates > Magic Link**: change the link so it works even when opened in another browser:
-   ```
-   {{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/app
-   ```
+4. **Authentication > Email Templates**: change the link in **both** templates below. The link opens a page with a Continue button, so mail scanners that pre-open links cannot use it up before the person clicks.
+   - **Magic Link**:
+     ```
+     {{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/app
+     ```
+   - **Invite user** (the default invite link does not sign people in to this app):
+     ```
+     {{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite&next=/app
+     ```
 5. **Authentication > Providers > Email**: keep Email enabled. If only your company should sign in, turn off "Allow new users to sign up" after you have signed in once, and add people with **Invite user**.
 6. **Authentication > SMTP**: Supabase's built-in mail is limited to a few emails an hour. For real use, set up your own SMTP sender (for example SES, SendGrid or Postmark).
 7. **Project Settings > API Keys**: copy the Project URL, the **publishable** key and the **secret** key for step 2. Projects that still show the older keys use `anon` in place of publishable and `service_role` in place of secret; either kind works.

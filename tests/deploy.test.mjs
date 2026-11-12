@@ -72,3 +72,10 @@ test('the repo is set up for the Hobby plan, and the Supabase timer calls the sc
   assert.match(sql, /vault\.decrypted_secrets where name = 'holo_cron_secret'/);
   assert.ok(!/Bearer [A-Za-z0-9_-]{20,}/.test(sql), 'no real secret in the file');
 });
+
+test('opening an email link never spends the one-time token; only the button POST does', () => {
+  const page = readFileSync(new URL('../app/auth/confirm/page.tsx', import.meta.url), 'utf8');
+  const verify = readFileSync(new URL('../app/auth/verify/route.ts', import.meta.url), 'utf8');
+  assert.ok(!/^[^/\n]*verifyOtp/m.test(page) && /method="post" action="\/auth\/verify"/.test(page));
+  assert.ok(/export async function POST/.test(verify) && !/export async function GET/.test(verify));
+});
