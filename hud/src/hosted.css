@@ -8,3 +8,4 @@
 .srcrow .wide2 { grid-column: span 2; }
 .srcrow .muted { color: var(--dim); }
 @media (max-width: 640px) { .srcrow .wide2 { grid-column: 1 / -1; } .acct-who { max-width: 150px; } }
+.acct a.mini { text-decoration: none; }

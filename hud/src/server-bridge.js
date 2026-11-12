@@ -38,8 +38,7 @@ window.HoloServer = {
     test: id => api('POST', '/api/sources/' + seg(id) + '/test')
   },
   schedules: () => api('GET', '/api/schedules'),
-  runNow: dsId => api('POST', '/api/datasets/' + seg(dsId) + '/run'),
-  billing: () => api('POST', '/api/billing')
+  runNow: dsId => api('POST', '/api/datasets/' + seg(dsId) + '/run')
 };
 
 function showSignedOut() {
@@ -64,15 +63,10 @@ function mountAccount() {
   // Upgrade (free) or Billing (pro), for the people who can pay: owners and admins.
   const role = cfg.workspace && cfg.workspace.role;
   if (cfg.billing && (role === 'owner' || role === 'admin')) {
-    const b = document.createElement('button');
-    b.className = 'mini'; b.type = 'button';
-    b.textContent = cfg.workspace.plan === 'pro' ? 'Billing' : 'Upgrade to Pro';
-    b.onclick = async () => {
-      b.disabled = true;
-      try { window.location.assign((await window.HoloServer.billing()).url); }
-      catch (e) { b.disabled = false; alert(e.message); }
-    };
-    w.insertBefore(b, w.querySelector('form'));
+    const pro = cfg.workspace.plan === 'pro';
+    const a = document.createElement('a');
+    a.className = 'mini'; a.href = pro ? '/upgrade' : '/#pricing'; a.textContent = pro ? 'Billing' : 'Upgrade to Pro';
+    w.insertBefore(a, w.querySelector('form'));
   }
   bar.appendChild(w);
 }

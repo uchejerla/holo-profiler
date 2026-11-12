@@ -113,10 +113,12 @@ There is no automatic re-encryption yet. To change `APP_ENCRYPTION_KEY`, set the
 Without these settings every workspace has every feature. With them, dropping files stays free and **connected sources, "Run on server now" and scheduled runs need the Pro plan**.
 
 1. `supabase db push` to apply the billing migration (adds the plan to each workspace). Do this before setting the keys below.
-2. Stripe > Product catalog: add a product (for example "Holo Profiler Pro") with a **recurring** price. Copy the price ID (`price_...`).
+2. Stripe > Product catalog: add a product (for example "Holo Profiler Pro") with two **recurring** prices: one monthly, and one yearly set below 12 times the monthly price (that gap is the yearly discount; the pricing page works out and shows the percentage). Copy both price IDs (`price_...`).
 3. Stripe > Developers > Webhooks: add an endpoint at `https://<your-domain>/api/billing/webhook` for the events `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated` and `customer.subscription.deleted`. Copy its signing secret (`whsec_...`).
 4. Stripe > Settings > Billing > Customer portal: turn it on, so customers can change card or cancel from the app's **Billing** button.
-5. Vercel > Environment Variables: set `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID` and `STRIPE_WEBHOOK_SECRET`, then redeploy. Use Stripe's test mode keys first and pay with card `4242 4242 4242 4242`.
+5. Vercel > Environment Variables: set `STRIPE_SECRET_KEY`, `STRIPE_PRICE_ID` (monthly), `STRIPE_PRICE_ID_YEARLY`, `STRIPE_WEBHOOK_SECRET` and `NEXT_PUBLIC_SUPPORT_EMAIL` (the address on the refund policy page), then redeploy. The pricing page at `/` reads both prices from Stripe and refreshes hourly. Use Stripe's test mode keys first and pay with card `4242 4242 4242 4242`.
+
+The refund policy customers agree to at checkout is `app/refund-policy/page.tsx`; read it, and have it checked against the law where you and your customers are, before taking live payments.
 
 Existing workspaces start on the free plan. To give one Pro without payment, run in the Supabase SQL editor: `update public.workspaces set plan = 'pro' where id = '<workspace id>';`
 
